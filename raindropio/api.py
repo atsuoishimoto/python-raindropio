@@ -1,150 +1,158 @@
 from __future__ import annotations
-from typing import Optional, Any, List, Dict, cast, Sequence, ClassVar
+from typing import Optional, Any, List, Dict, cast, Sequence, ClassVar, TypeVar, Generic, Callable, Tuple, overload, Type, Union
 from dataclasses import dataclass
 import json
 import enum
 import datetime
 from dateutil.parser import parse as dateparse
 import requests
+from abc import ABCMeta, abstractmethod
 
 
-def _enum_fromjson(cls: Any, value):
-    try:
-        ret = cls(value)
-    except ValueError:
-        return cls.unknown
+E = TypeVar('E', bound='JSONFriendlyEnum')
 
 
-class AccessLevel(enum.IntEnum):
+class JSONFriendlyEnum(enum.Enum):
+    @classmethod
+    def json_unknown(cls, value:Any)->Any:
+        raise TypeError(
+            f'Invalid value for type {cls.__name__}: {value!r}')
+
+    @classmethod
+    def fromjson(cls:Type[E], value: Any) -> E:
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.json_unknown(value)
+
+    def tojson(self) -> Any:
+        return self.value
+
+class AccessLevel(enum.IntEnum, JSONFriendlyEnum):
     readonly = 1
     collaborator_read = 2
     collaborator_write = 3
     owner = 4
-    unknown = -1
-
-    @classmethod
-    def fromjson(cls, value: Any) -> AccessLevel:
-        return cast(AccessLevel, _enum_fromjson(cls, value))
 
 
-class View(enum.Enum):
+
+class View(JSONFriendlyEnum):
     list = "list"
     simple = "simple"
     grid = "grid"
     masonly = "masonry"
-    unknown = ""
-
-    @classmethod
-    def fromjson(cls, value: Any) -> View:
-        return cast(View, _enum_fromjson(cls, value))
 
 
-@dataclass
-class UserRef:
-    id: int
-
-    @classmethod
-    def fromjson(cls, value: Any) -> UserRef:
-        return cls(id=cast(int, value["$id"]))
 
 
-@dataclass
-class Access:
-    for_: UserRef
-    level: int
-    draggable: bool
+class DictData:
+    data: Dict[str, Any]
 
-    @classmethod
-    def fromjson(cls, value: Any) -> Access:
-        return cls(
-            for_=UserRef(id=value["for"]),
-            level=value["level"],
-            draggable=value["draggable"],
-        )
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.data = data
+
+F = TypeVar("F")
+
+Construnctor= Callable[[Any], F]
+
+def optional(f:Construnctor[F])->Callable[[Any], Optional[F]]:
+    def wrap(value:Any)->Optional[F]:
+        return f(value)
+    return wrap
 
 
-@dataclass
-class CollectionRef:
+class Omit(JSONFriendlyEnum):
+    omit = True
+
+class Field(Generic[F]):
+    ctor : Tuple[Optional[Construnctor[F]]]
+    name: Optional[str]
+
+
+    def __init__(self, ctor:Optional[Construnctor[F]]=None, *, name:Optional[str]=None, default:Any=Omit.omit):
+
+        self.ctor = ctor,
+        self.name = name
+        self.default = default
+
+    def __set_name__(self, owner: Any, name: str) -> None:
+        if self.name is None:
+            self.name = name
+
+    def __get__(self, instance: Any, owner: type) -> F:
+        if self.name in instance.data:
+            value = instance.data[self.name]
+            ctor = self.ctor[0]
+            if ctor is not None:
+                return ctor(value)
+            else:
+                return cast(F, value)
+
+        if self.default is not Omit.omit:
+            return cast(F, self.default)
+
+        raise ValueError(f"{self.name} is not found")
+
+class CollectionRef(DictData):
     Unsorted: ClassVar[CollectionRef]
     Trash: ClassVar[CollectionRef]
-    id: int
 
-    @classmethod
-    def fromjson(cls, value: Any) -> CollectionRef:
-        return CollectionRef(id=cast(int, value["$id"]))
+    id = Field[int]()
 
-
-CollectionRef.Unsorted = CollectionRef(id=-1)
-CollectionRef.Trash = CollectionRef(id=-99)
+    
+CollectionRef.Unsorted = CollectionRef({"id":-1})
+CollectionRef.Trash = CollectionRef({"id":-1})
 
 
-@dataclass
-class Collection:
-    id: int
-    access: Access
-    collaborators: Any
-    color: Optional[str]
-    count: int
-    cover: List[str]
-    created: datetime.datetime
-    expanded: bool
-    lastUpdate: datetime.datetime
-    parent: Optional[CollectionRef]
-    public: bool
-    sort: int
-    title: str
-    user: UserRef
-    view: View
+class UserRef(DictData):
+    id = Field[int](name="$id")
 
-    _json: Dict[str, Any]
 
-    @classmethod
-    def fromjson(cls, json: Dict[str, Any]) -> Collection:
 
-        parent_ref: Optional[CollectionRef] = None
+class Access(DictData):
+    for_ = Field(UserRef, name="for")
+    level = Field[int]()
+    draggable = Field[bool]()
 
-        parent = json.get("parent")
-        if parent:
-            parent_ref = CollectionRef.fromjson(parent)
 
-        return cls(
-            id=json["_id"],
-            access=Access.fromjson(json.get("access")),
-            collaborators=json.get("collaborators", {}),
-            color=json.get("color", None),
-            count=json["count"],
-            cover=json["cover"],
-            created=dateparse(json["created"]),
-            expanded=json["expanded"],
-            lastUpdate=dateparse(json["lastUpdate"]),
-            parent=parent_ref,
-            public=json["public"],
-            sort=json["sort"],
-            title=json["title"],
-            user=UserRef.fromjson(json["user"]),
-            view=View.fromjson(json["view"]),
-            _json=json,
-        )
+
+
+class Collection(DictData):
+    id = Field[int](name="_id")
+    access = Field(Access)
+    collaborators = Field[Optional[List]](default=None)
+    color = Field[Optional[str]](default=None)
+    count = Field[int]()
+    cover = Field[List[str]]()
+    created = Field(dateparse)
+    expanded = Field[bool]()
+    lastUpdate = Field(dateparse)
+    parent = Field[Optional[CollectionRef]](CollectionRef, default=None)
+    public = Field[bool]()
+    sort = Field[int]()
+    title = Field[str]()
+    user = Field(UserRef)
+    view = Field(View)
 
     @classmethod
     def get_roots(cls, api: API) -> Sequence[Collection]:
         URL = "https://api.raindrop.io/rest/v1/collections"
         ret = api.get(URL)
         items = ret.json()["items"]
-        return [cls.fromjson(item) for item in items]
+        return [cls(item) for item in items]
 
     @classmethod
     def get_childrens(cls, api: API) -> Sequence[Collection]:
         URL = "https://api.raindrop.io/rest/v1/collections/childrens"
         ret = api.get(URL)
         items = ret.json()["items"]
-        return [cls.fromjson(item) for item in items]
+        return [cls(item) for item in items]
 
     @classmethod
     def get(cls, api: API, id: int) -> Collection:
         URL = f"https://api.raindrop.io/rest/v1/collection/{id}"
         item = api.get(URL).json()["item"]
-        return cls.fromjson(item)
+        return cls(item)
 
     @classmethod
     def create(
@@ -174,7 +182,7 @@ class Collection:
 
         URL = f"https://api.raindrop.io/rest/v1/collection"
         item = api.post(URL, json=args).json()["item"]
-        return Collection.fromjson(item)
+        return Collection(item)
 
     @classmethod
     def update(
@@ -208,7 +216,7 @@ class Collection:
 
         URL = f"https://api.raindrop.io/rest/v1/collection/{id}"
         item = api.put(URL, json=args).json()["item"]
-        return Collection.fromjson(item)
+        return Collection(item)
 
     @classmethod
     def remove(cls, api: API, id: int):
@@ -216,7 +224,14 @@ class Collection:
         api.delete(URL, json={})
 
 
-class RaindropType(enum.Enum):
+
+
+
+
+
+
+
+class RaindropType(JSONFriendlyEnum):
     link = "link"
     article = "article"
     image = "image"
@@ -224,38 +239,39 @@ class RaindropType(enum.Enum):
     document = "document"
     audio = "audi"
 
-    unknown = ""
-
-    @classmethod
-    def fromjson(cls, value: Any) -> RaindropType:
-        return cast(RaindropType, _enum_fromjson(cls, value))
 
 
-@dataclass
-class Cache:
-    pass
+#@dataclass
+#class Cache:
+#    pass
+#
+#
+#@dataclass
+#class File:
+#    pass
 
 
-@dataclass
-class File:
-    pass
+class Raindrop(DictData):
+    id = Field[int](name="_id")
+    access = Field(Access)
+    collaborators = Field[Optional[List]](default=None)
+    color = Field[Optional[str]](default=None)
+    count = Field[int]()
 
 
-@dataclass
-class Raindrop:
-    id: int
-    collection: CollectionRef
-    cover: str
-    created: datetime.datetime
-    domain: str
-    excerpt: str
-    lastUpdate: datetime.datetime
-    link: str
-    media: Sequence[Dict[str, Any]]
-    tags: Sequence[str]
-    title: str
-    type: RaindropType
-    user: UserRef
+    id = Field[int](name="_id")
+    collection = Field(CollectionRef)
+    cover= Field[str]()
+    created= Field(dateparse)
+    domain= Field[str]()
+    excerpt= Field[str]()
+    lastUpdate= Field(dateparse)
+    link= Field[str]()
+    media= Field[Sequence[Dict[str, Any]]]()
+    tags= Field[Sequence[str]]()
+    title= Field[str]()
+    type= Field(RaindropType)
+    user= Field(UserRef)
 
     #    broken: bool
     #    cache: Cache
@@ -263,32 +279,12 @@ class Raindrop:
     #    file: File
     #    important: bool
     #    html: str
-    _json: Dict[str, Any]
-
-    @classmethod
-    def fromjson(cls, json: Dict[str, Any]) -> Raindrop:
-        return cls(
-            id=json["_id"],
-            collection=CollectionRef.fromjson(json.get("collection")),
-            cover=json["cover"],
-            created=dateparse(json["created"]),
-            domain=json["domain"],
-            excerpt=json["excerpt"],
-            lastUpdate=dateparse(json["lastUpdate"]),
-            link=json["link"],
-            media=json["media"],
-            tags=json["tags"],
-            title=json["title"],
-            type=RaindropType.fromjson(json["type"]),
-            user=UserRef.fromjson(json["user"]),
-            _json=json,
-        )
 
     @classmethod
     def get(cls, api: API, id: int) -> Raindrop:
         URL = f"https://api.raindrop.io/rest/v1/raindrop/{id}"
         item = api.get(URL).json()["item"]
-        return cls.fromjson(item)
+        return cls(item)
 
     @classmethod
     def create(
@@ -303,7 +299,7 @@ class Raindrop:
         tags: Optional[Sequence[str]] = None,
         media: Optional[Sequence[Dict[str, Any]]] = None,
         cover: Optional[str] = None,
-        collection: Optional[CollectionRef] = None,
+        collection: Optional[Union[Collection, CollectionRef, int]] = None,
         type: Optional[str] = None,
         html: Optional[str] = None,
         excerpt: Optional[str] = None,
@@ -316,9 +312,9 @@ class Raindrop:
         if pleaseParse:
             args["pleaseParse"] = {}
         if created is not None:
-            args["created"] = created.isoformat()
+            args["created"] = created
         if lastUpdate is not None:
-            args["lastUpdate"] = lastUpdate.isoformat()
+            args["lastUpdate"] = lastUpdate
         if order is not None:
             args["order"] = order
         if important is not None:
@@ -330,7 +326,10 @@ class Raindrop:
         if cover is not None:
             args["cover"] = cover
         if collection is not None:
-            args["collection"] = collection.id
+            if isinstance(collection, (Collection, CollectionRef)):
+                args["collection"] = collection.id
+            else:
+                args["collection"] = collection
         if type is not None:
             args["type"] = type
         if html is not None:
@@ -342,7 +341,7 @@ class Raindrop:
 
         URL = f"https://api.raindrop.io/rest/v1/raindrop"
         item = api.post(URL, json=args).json()["item"]
-        return cls.fromjson(item)
+        return cls(item)
 
     @classmethod
     def update(
@@ -369,9 +368,9 @@ class Raindrop:
         if pleaseParse:
             args["pleaseParse"] = {}
         if created is not None:
-            args["created"] = created.isoformat()
+            args["created"] = created
         if lastUpdate is not None:
-            args["lastUpdate"] = lastUpdate.isoformat()
+            args["lastUpdate"] = lastUpdate
         if order is not None:
             args["order"] = order
         if important is not None:
@@ -397,7 +396,7 @@ class Raindrop:
 
         URL = f"https://api.raindrop.io/rest/v1/raindrop/{id}"
         item = api.put(URL, json=args).json()["item"]
-        return cls.fromjson(item)
+        return cls(item)
 
     @classmethod
     def remove(cls, api: API, id: int):
@@ -430,8 +429,9 @@ class Raindrop:
 
         results = api.get(URL, params=params).json()
 
-        return [cls.fromjson(item) for item in results['items']]
-            
+        return [cls(item) for item in results['items']]
+
+
 
 class API:
     _token: str
@@ -439,30 +439,55 @@ class API:
     def __init__(self, token):
         self._token = token
 
+    def _json_unknown(self, obj:Any)->Any:
+        if isinstance(obj, JSONFriendlyEnum):
+            return obj.tojson()
+
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+
+        raise TypeError(f'Object of type {obj.__class__.__name__} '
+                        f'is not JSON serializable')
+
+    def _to_json(self, obj:Any)->Optional[str]:
+        if obj is not None:
+            return json.dumps(obj, default=self._json_unknown)
+        else:
+            return None
+
+    def _request_headers(self):
+        return {
+             'Content-Type': 'application/json',
+             "Authorization": f"Bearer {self._token}"
+            }
+            
     def get(self, url, params=None):
         ret = requests.get(
-            url, headers={"Authorization": f"Bearer {self._token}"}, params=params
+            url, headers=self._request_headers(), params=params
         )
         ret.raise_for_status()
         return ret
 
-    def put(self, url, json):
+    def put(self, url, json=None):
+        json=self._to_json(json)
         ret = requests.put(
-            url, headers={"Authorization": f"Bearer {self._token}"}, json=json
+            url, headers=self._request_headers(), data=json
         )
         ret.raise_for_status()
         return ret
 
-    def post(self, url, json):
+    def post(self, url, json=None):
+        json=self._to_json(json)
         ret = requests.post(
-            url, headers={"Authorization": f"Bearer {self._token}"}, json=json
+            url, headers=self._request_headers(), data=json
         )
         ret.raise_for_status()
         return ret
 
-    def delete(self, url, json):
+    def delete(self, url, json=None):
+        json=self._to_json(json)
         ret = requests.delete(
-            url, headers={"Authorization": f"Bearer {self._token}"}, json=json
+            url, headers=self._request_headers(), data=json
         )
         ret.raise_for_status()
         return ret

@@ -2,6 +2,7 @@ import os
 from pprint import pprint
 import requests
 from raindropio import api
+
 import datetime
 
 from dotenv import load_dotenv
@@ -12,7 +13,24 @@ token = os.getenv("RAINDROP_TOKEN")
 
 def test_get():
     for c in api.Collection.get_roots(api.API(token)):
-        print(c)
+        print("------------------------------")
+        print("id", c.id)
+        print("access", c.access)
+        print("collaborators", c.collaborators)
+        print("color", c.color)
+        print("count", c.count)
+        print("cover", c.cover)
+        print("created", c.created)
+        print("expanded", c.expanded)
+        print("lastUpdate", c.lastUpdate)
+        print("parent", c.parent)
+        print("public", c.public)
+        print("sort", c.sort)
+        print("title", c.title)
+        print("user", c.user)
+        print("view", c.view)
+
+
     for c in api.Collection.get_childrens(api.API(token)):
         print(c)
 
@@ -22,7 +40,7 @@ def test_get():
 
 def test_put():
     title = str(datetime.datetime.now())
-    c = api.Collection.update(api.API(token), id=11561930, title=title)
+    c = api.Collection.update(api.API(token), id=11561930, title=title, view=api.View.list)
     assert c.title == title
 
 
