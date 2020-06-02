@@ -61,7 +61,7 @@ def optional(f:Construnctor[F])->Callable[[Any], Optional[F]]:
     return wrap
 
 
-class Omit(JSONFriendlyEnum):
+class _Omit(JSONFriendlyEnum):
     omit = True
 
 class Field(Generic[F]):
@@ -69,9 +69,9 @@ class Field(Generic[F]):
     name: Optional[str]
 
 
-    def __init__(self, ctor:Optional[Construnctor[F]]=None, *, name:Optional[str]=None, default:Any=Omit.omit):
+    def __init__(self, ctor:Optional[Construnctor[F]]=None, *, name:Optional[str]=None, default:Any=_Omit.omit):
 
-        self.ctor = ctor,
+        self.ctor = (ctor,)
         self.name = name
         self.default = default
 
@@ -88,7 +88,7 @@ class Field(Generic[F]):
             else:
                 return cast(F, value)
 
-        if self.default is not Omit.omit:
+        if self.default is not _Omit.omit:
             return cast(F, self.default)
 
         raise ValueError(f"{self.name} is not found")
@@ -356,7 +356,7 @@ class Raindrop(DictData):
         tags: Optional[Sequence[str]] = None,
         media: Optional[Sequence[Dict[str, Any]]] = None,
         cover: Optional[str] = None,
-        collection: Optional[CollectionRef] = None,
+        collection: Optional[Union[Collection, CollectionRef, int]] = None,
         type: Optional[str] = None,
         html: Optional[str] = None,
         excerpt: Optional[str] = None,
@@ -382,7 +382,10 @@ class Raindrop(DictData):
         if cover is not None:
             args["cover"] = cover
         if collection is not None:
-            args["collection"] = collection.id
+            if isinstance(collection, (Collection, CollectionRef)):
+                args["collection"] = collection.id
+            else:
+                args["collection"] = collection
         if type is not None:
             args["type"] = type
         if html is not None:
