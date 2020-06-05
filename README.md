@@ -24,7 +24,7 @@ In the application page, create test token to run following samples.
 
 ```python
 
-from raindropio.api import API, Collection, Raindrop
+from raindropio import API, Collection
 api = API(raidrop_access_token)
 
 c = Collection.create(api, title="Sample collection")
@@ -36,7 +36,7 @@ print(c.title)
 
 ```python
 
-from raindropio.api import API, CollectionRef, Raindrop
+from raindropio import API, CollectionRef, Raindrop
 api = API(raidrop_access_token)
 
 page = 0

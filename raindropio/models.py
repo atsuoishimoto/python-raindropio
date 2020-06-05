@@ -55,7 +55,7 @@ class CollectionRef(DictModel):
     Unsorted: ClassVar[CollectionRef]
     Trash: ClassVar[CollectionRef]
 
-    id = DictAttr[int]()
+    id = DictAttr[int](name="$id")
 
 
 CollectionRef.Unsorted = CollectionRef({"id": -1})
