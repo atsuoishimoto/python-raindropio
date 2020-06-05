@@ -15,13 +15,16 @@ from typing import (
     Type,
     Union,
 )
+
 from dataclasses import dataclass
 import json
 import enum
 import datetime
+from abc import ABCMeta, abstractmethod
+
 from dateutil.parser import parse as dateparse
 import requests
-from abc import ABCMeta, abstractmethod
+from jashin.dictattr import DictModel, DictAttr, DictAttrList
 
 
 class AccessLevel(enum.IntEnum):
@@ -38,140 +41,56 @@ class View(enum.Enum):
     masonly = "masonry"
 
 
-D = TypeVar("D", bound="_DictData")
-
-
-class _DictData:
-    data: Dict[str, Any]
-
-    def __init__(self, data: Dict[str, Any]) -> None:
-        self._data = data
-
-
-#    @classmethod
-#    def from_seq(cls:Type[D], seq:Sequence[Any])->Sequence[D]:
-#        return [cls(item) for item in seq]
-
-
-F = TypeVar("F")
-
-Construnctor = Callable[[Any], F]
-
-
-def optional(f: Construnctor[F]) -> Callable[[Any], Optional[F]]:
-    def wrap(value: Any) -> Optional[F]:
-        return f(value)
-
-    return wrap
-
-
-class Omit(enum.Enum):
-    omit = True
-
-
-class _FieldBase(Generic[F]):
-    ctor: Tuple[Optional[Construnctor[F]]]
-    name: Optional[str]
-
-    def __init__(
-        self,
-        ctor: Optional[Construnctor[F]] = None,
-        *,
-        name: Optional[str] = None,
-        default: Any = Omit.omit,
-    ):
-
-        self.ctor = (ctor,)
-        self.name = name
-        self.default = default
-
-    def __set_name__(self, owner: Any, name: str) -> None:
-        if self.name is None:
-            self.name = name
-
-
-class _Field(_FieldBase[F]):
-    def __get__(self, instance: Any, owner: type) -> F:
-        if self.name in instance._data:
-            value = instance._data[self.name]
-            ctor = self.ctor[0]
-            if ctor is not None:
-                return ctor(value)
-            else:
-                return cast(F, value)
-
-        if self.default is not Omit.omit:
-            return cast(F, self.default)
-
-        raise ValueError(f"{self.name} is not found")
-
-
-class _ListField(_FieldBase[F]):
-    def __get__(self, instance: Any, owner: type) -> List[F]:
-        if self.name in instance._data:
-            values = instance._data[self.name]
-            ctor = self.ctor[0]
-            if ctor is not None:
-                return [ctor(value) for value in values]
-            else:
-                return cast(List[F], values)
-
-        if self.default is not Omit.omit:
-            return cast(List[F], self.default)
-
-        raise ValueError(f"{self.name} is not found")
-
-
-class CollectionRef(_DictData):
+class CollectionRef(DictModel):
     Unsorted: ClassVar[CollectionRef]
     Trash: ClassVar[CollectionRef]
 
-    id = _Field[int]()
+    id = DictAttr[int]()
 
 
 CollectionRef.Unsorted = CollectionRef({"id": -1})
 CollectionRef.Trash = CollectionRef({"id": -1})
 
 
-class UserRef(_DictData):
+class UserRef(DictModel):
     """Represents reference to :class:`User` object. """
 
     #: (:class:`int`) The id of the :class:`User`.
-    id = _Field[int](name="$id")
+    id = DictAttr[int](name="$id")
 
 
-class Access(_DictData):
+class Access(DictModel):
     """Represents Access control of Collections"""
 
     #: (:class:`UserRef`) The user for this permission.
-    level = _Field(AccessLevel)
+    level = DictAttr(AccessLevel)
 
     #: (:class:`bool`) True if possible to change parent.
-    draggable = _Field[bool]()
+    draggable = DictAttr[bool]()
 
 
-class Collection(_DictData):
+class Collection(DictModel):
     """Represents Collection"""
 
     #: (:class:`int`) The id of the collection.
-    id = _Field[int](name="_id")
+    id = DictAttr[int](name="_id")
 
     #: (:class:`Access`) Permissions for this collection
-    access = _Field(Access)
+    access = DictAttr(Access)
 
-    collaborators = _Field[Optional[List]](default=None)
-    color = _Field[Optional[str]](default=None)
-    count = _Field[int]()
-    cover = _Field[List[str]]()
-    created = _Field(dateparse)
-    expanded = _Field[bool]()
-    lastUpdate = _Field(dateparse)
-    parent = _Field[Optional[CollectionRef]](CollectionRef, default=None)
-    public = _Field[bool]()
-    sort = _Field[int]()
-    title = _Field[str]()
-    user = _Field(UserRef)
-    view = _Field(View)
+    collaborators = DictAttr[Optional[List]](default=None)
+    color = DictAttr[Optional[str]](default=None)
+    count = DictAttr[int]()
+    cover = DictAttr[List[str]]()
+    created = DictAttr(dateparse)
+    expanded = DictAttr[bool]()
+    lastUpdate = DictAttr(dateparse)
+    parent = DictAttr[Optional[CollectionRef]](CollectionRef, default=None)
+    public = DictAttr[bool]()
+    sort = DictAttr[int]()
+    title = DictAttr[str]()
+    user = DictAttr(UserRef)
+    view = DictAttr(View)
 
     @classmethod
     def get_roots(cls, api: API) -> Sequence[Collection]:
@@ -273,22 +192,22 @@ class RaindropType(enum.Enum):
     audio = "audi"
 
 
-class Raindrop(_DictData):
+class Raindrop(DictModel):
     """Raindrop"""
 
-    id = _Field[int](name="_id")
-    collection = _Field(CollectionRef)
-    cover = _Field[str]()
-    created = _Field(dateparse)
-    domain = _Field[str]()
-    excerpt = _Field[str]()
-    lastUpdate = _Field(dateparse)
-    link = _Field[str]()
-    media = _Field[Sequence[Dict[str, Any]]]()
-    tags = _Field[Sequence[str]]()
-    title = _Field[str]()
-    type = _Field(RaindropType)
-    user = _Field(UserRef)
+    id = DictAttr[int](name="_id")
+    collection = DictAttr(CollectionRef)
+    cover = DictAttr[str]()
+    created = DictAttr(dateparse)
+    domain = DictAttr[str]()
+    excerpt = DictAttr[str]()
+    lastUpdate = DictAttr(dateparse)
+    link = DictAttr[str]()
+    media = DictAttr[Sequence[Dict[str, Any]]]()
+    tags = DictAttr[Sequence[str]]()
+    title = DictAttr[str]()
+    type = DictAttr(RaindropType)
+    user = DictAttr(UserRef)
 
     #    broken: bool
     #    cache: Cache
@@ -464,41 +383,41 @@ class FontColor(enum.Enum):
     night = "night"
 
 
-class UserConfig(_DictData):
-    broken_level = _Field(BrokenLevel)
-    font_color = _Field[Optional[BrokenLevel]](BrokenLevel, default=None)
-    font_size = _Field[int]()
-    last_collection = _Field[int]()
-    raindrops_sort = _Field[str]()
-    raindrops_view = _Field(View)
+class UserConfig(DictModel):
+    broken_level = DictAttr(BrokenLevel)
+    font_color = DictAttr[Optional[BrokenLevel]](BrokenLevel, default=None)
+    font_size = DictAttr[int]()
+    last_collection = DictAttr[int]()
+    raindrops_sort = DictAttr[str]()
+    raindrops_view = DictAttr(View)
 
 
-class Group(_DictData):
-    title = _Field[str]()
-    hidden = _Field[bool]()
-    sort = _Field[int]()
-    collectionids = _ListField[int](name="collections")
+class Group(DictModel):
+    title = DictAttr[str]()
+    hidden = DictAttr[bool]()
+    sort = DictAttr[int]()
+    collectionids = DictAttrList[int](name="collections")
 
 
-class UserFiles(_DictData):
-    used = _Field[int]()
-    size = _Field[int]()
-    lastCheckPoint = _Field[str]()
+class UserFiles(DictModel):
+    used = DictAttr[int]()
+    size = DictAttr[int]()
+    lastCheckPoint = DictAttr[str]()
 
 
-class User(_DictData):
+class User(DictModel):
     """User"""
 
-    id = _Field[int](name="_id")
-    config = _Field(UserConfig)
-    email = _Field[str]()
-    email_MD5 = _Field[str]()
-    files = _Field(UserFiles)
-    fullName = _Field[str]()
-    groups = _ListField(Group)
-    password = _Field[bool]()
-    pro = _Field[bool]()
-    registered = _Field[str]()
+    id = DictAttr[int](name="_id")
+    config = DictAttr(UserConfig)
+    email = DictAttr[str]()
+    email_MD5 = DictAttr[str]()
+    files = DictAttr(UserFiles)
+    fullName = DictAttr[str]()
+    groups = DictAttrList(Group)
+    password = DictAttr[bool]()
+    pro = DictAttr[bool]()
+    registered = DictAttr[str]()
 
     @classmethod
     def get(cls, api: API) -> User:
