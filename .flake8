@@ -4,6 +4,10 @@ ignore =
     E203, # whitespace before ':'
     E261, # at least two spaces before inline comment
     E731, # do not assign a lambda expression, use a def
-    W503, # line break before binary operator
     E401, # multiple imports on one line 
     E231, # missing whitespace after ','
+
+    F403, # unable to detect undefined names
+    F405, # unable to detect undefined names
+
+    W503, # line break before binary operator

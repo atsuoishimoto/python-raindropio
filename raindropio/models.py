@@ -4,29 +4,38 @@ from typing import (
     Any,
     List,
     Dict,
-    cast,
     Sequence,
     ClassVar,
-    TypeVar,
-    Generic,
-    Callable,
-    Tuple,
-    overload,
-    Type,
     Union,
 )
 
-from dataclasses import dataclass
 import json
 import enum
 import datetime
-from abc import ABCMeta, abstractmethod
 
 from dateutil.parser import parse as dateparse
-import requests
 from jashin.dictattr import DictModel, DictAttr, DictAttrList
 
 from .api import API
+
+__all__ = [
+    "Access",
+    "AccessLevel",
+    "BrokenLevel",
+    "Collection",
+    "CollectionRef",
+    "DictModel",
+    "FontColor",
+    "Group",
+    "Raindrop",
+    "RaindropType",
+    "User",
+    "UserConfig",
+    "UserFiles",
+    "UserRef",
+    "View",
+]
+
 
 class AccessLevel(enum.IntEnum):
     readonly = 1
@@ -140,7 +149,7 @@ class Collection(DictModel):
         if cover is not None:
             args["cover"] = cover
 
-        URL = f"https://api.raindrop.io/rest/v1/collection"
+        URL = "https://api.raindrop.io/rest/v1/collection"
         item = api.post(URL, json=args).json()["item"]
         return Collection(item)
 
@@ -276,7 +285,7 @@ class Raindrop(DictModel):
         if title is not None:
             args["title"] = title
 
-        URL = f"https://api.raindrop.io/rest/v1/raindrop"
+        URL = "https://api.raindrop.io/rest/v1/raindrop"
         item = api.post(URL, json=args).json()["item"]
         return cls(item)
 

@@ -1,15 +1,6 @@
-import os
-from pprint import pprint
-import requests
 from raindropio import api
 
 import datetime
-
-from dotenv import load_dotenv  # type: ignore
-
-load_dotenv()
-
-token = os.getenv("RAINDROP_TOKEN")
 
 
 def test_get():

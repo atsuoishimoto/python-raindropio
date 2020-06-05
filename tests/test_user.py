@@ -1,7 +1,4 @@
-from pprint import pprint
-import requests
 from raindropio import api
-import datetime
 import os
 
 from dotenv import load_dotenv  # type: ignore

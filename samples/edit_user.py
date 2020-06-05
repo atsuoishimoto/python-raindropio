@@ -1,7 +1,7 @@
-from raindropio.api import API, User
 import os
+from raindropio import *
 
-api = API(os.environ['RAINDROP_TOKEN'])
+api = API(os.environ["RAINDROP_TOKEN"])
 
 c = User.get(api)
 print("id:", c.id)
