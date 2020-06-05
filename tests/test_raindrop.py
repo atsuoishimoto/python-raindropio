@@ -81,3 +81,6 @@ def test_remove():
     api = API("dummy")
     with patch("raindropio.api.requests") as m:
         Raindrop.remove(api, id=2000)
+        assert m.delete.call_args[0] == (
+            "https://api.raindrop.io/rest/v1/raindrop/2000",
+        )
