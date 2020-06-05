@@ -5,7 +5,8 @@ from raindropio import api
 
 import datetime
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
+
 load_dotenv()
 
 token = os.getenv("RAINDROP_TOKEN")
@@ -30,7 +31,6 @@ def test_get():
         print("user", c.user)
         print("view", c.view)
 
-
     for c in api.Collection.get_childrens(api.API(token)):
         print(c)
 
@@ -40,7 +40,9 @@ def test_get():
 
 def test_put():
     title = str(datetime.datetime.now())
-    c = api.Collection.update(api.API(token), id=11561930, title=title, view=api.View.list)
+    c = api.Collection.update(
+        api.API(token), id=11561930, title=title, view=api.View.list
+    )
     assert c.title == title
 
 

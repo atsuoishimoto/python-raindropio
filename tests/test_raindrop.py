@@ -4,7 +4,8 @@ from raindropio import api
 import datetime
 import os
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
+
 load_dotenv()
 
 token = os.getenv("RAINDROP_TOKEN")
