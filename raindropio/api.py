@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import (
     Optional,
     Any,
+    Dict
 )
 
 import json
@@ -19,7 +20,7 @@ class API:
 
     _token: str
 
-    def __init__(self, token):
+    def __init__(self, token:str)->None:
         self._token = token
 
     def _json_unknown(self, obj: Any) -> Any:
@@ -39,13 +40,13 @@ class API:
         else:
             return None
 
-    def _request_headers(self):
+    def _request_headers(self)->Dict[str,str]:
         return {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self._token}",
         }
 
-    def get(self, url, params=None):
+    def get(self, url:str, params:Optional[Dict[Any,Any]]=None)->requests.models.Response:
         """Send a GET request
 
         :param url: The url to send request
@@ -60,21 +61,22 @@ class API:
 
         ret = requests.get(url, headers=self._request_headers(), params=params)
         ret.raise_for_status()
+
         return ret
 
-    def put(self, url, json=None):
+    def put(self, url:str, json:Any=None)->requests.models.Response:
         json = self._to_json(json)
         ret = requests.put(url, headers=self._request_headers(), data=json)
         ret.raise_for_status()
         return ret
 
-    def post(self, url, json=None):
+    def post(self, url:str, json:Any=None)->requests.models.Response:
         json = self._to_json(json)
         ret = requests.post(url, headers=self._request_headers(), data=json)
         ret.raise_for_status()
         return ret
 
-    def delete(self, url, json=None):
+    def delete(self, url:str, json:Any=None)->requests.models.Response:
         json = self._to_json(json)
         ret = requests.delete(url, headers=self._request_headers(), data=json)
         ret.raise_for_status()

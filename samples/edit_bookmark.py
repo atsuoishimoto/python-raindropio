@@ -3,7 +3,7 @@ from raindropio import *
 
 api = API(os.environ["RAINDROP_TOKEN"])
 
-c = Raindrop.create(api, link="https://www.python.org/")
+c = Raindrop.create(api, link="https://www.python.org/", tags=["abc", "def"])
 print(c.title, c.link)
 
 c = Raindrop.update(api, id=c.id, title="title")

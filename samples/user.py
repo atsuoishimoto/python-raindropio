@@ -4,6 +4,7 @@ from raindropio import *
 api = API(os.environ["RAINDROP_TOKEN"])
 
 c = User.get(api)
+
 print("id:", c.id)
 print("config:", c.config)
 print("email:", c.email)

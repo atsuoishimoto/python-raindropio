@@ -58,8 +58,8 @@ class CollectionRef(DictModel):
     id = DictAttr[int](name="$id")
 
 
-CollectionRef.Unsorted = CollectionRef({"id": -1})
-CollectionRef.Trash = CollectionRef({"id": -1})
+CollectionRef.Unsorted = CollectionRef({"$id": -1})
+CollectionRef.Trash = CollectionRef({"$id": -1})
 
 
 class UserRef(DictModel):
@@ -377,7 +377,6 @@ class Raindrop(DictModel):
         URL = f"https://api.raindrop.io/rest/v1/raindrops/{collection.id}"
 
         results = api.get(URL, params=params).json()
-
         return [cls(item) for item in results["items"]]
 
 
@@ -395,10 +394,9 @@ class FontColor(enum.Enum):
 
 class UserConfig(DictModel):
     broken_level = DictAttr(BrokenLevel)
-    font_color = DictAttr[Optional[BrokenLevel]](BrokenLevel, default=None)
+    font_color = DictAttr[Optional[FontColor]](FontColor, default=None)
     font_size = DictAttr[int]()
     last_collection = DictAttr[int]()
-    raindrops_sort = DictAttr[str]()
     raindrops_view = DictAttr(View)
 
 
@@ -406,13 +404,13 @@ class Group(DictModel):
     title = DictAttr[str]()
     hidden = DictAttr[bool]()
     sort = DictAttr[int]()
-    collectionids = DictAttrList[int](name="collections")
+    collections = DictAttrList[int](name="collections")
 
 
 class UserFiles(DictModel):
     used = DictAttr[int]()
     size = DictAttr[int]()
-    lastCheckPoint = DictAttr[str]()
+    lastCheckPoint = DictAttr(dateparse)
 
 
 class User(DictModel):
@@ -427,7 +425,7 @@ class User(DictModel):
     groups = DictAttrList(Group)
     password = DictAttr[bool]()
     pro = DictAttr[bool]()
-    registered = DictAttr[str]()
+    registered = DictAttr(dateparse)
 
     @classmethod
     def get(cls, api: API) -> User:

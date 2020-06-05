@@ -28,5 +28,3 @@ for c in Collection.get_roots(api):
 
 for c in Collection.get_childrens(api):
     print_collection(c)
-    import pprint
-    pprint.pprint(c._dict)
