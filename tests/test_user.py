@@ -61,7 +61,7 @@ def test_get() -> None:
         assert c.groups[0].hidden is False
         assert c.groups[0].sort == 0
         assert c.groups[0].title == "My Collections"
-        assert c.groups[0].collections == [2000, 3000]
+        assert list(c.groups[0].collections) == [2000, 3000]
         assert c.password is True
         assert c.pro is True
         assert c.registered == datetime.datetime(
