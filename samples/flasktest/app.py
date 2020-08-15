@@ -2,16 +2,13 @@ import os
 from flask import Flask, redirect, request
 from flask import render_template_string
 
-from requests_oauthlib import OAuth2Session
-
 from raindropio import *
-
 
 
 client_id = os.environ["RAINDROP_CLIENT_ID"]
 client_secret = os.environ["RAINDROP_CLIENT_SECRET"]
 
-redirect_uri = 'http://localhost:5000/approved'
+redirect_uri = "http://localhost:5000/approved"
 
 app = Flask(__name__)
 
@@ -33,34 +30,36 @@ COLLECTIONS = """
 """
 
 
-import requests
-@app.route('/approved')
+@app.route("/approved")
 def approved():
-    oauth = OAuth2Session(client_id, redirect_uri=redirect_uri)
-    code = request.args.get('code')
+    oauth = create_oauth2session(client_id, redirect_uri=redirect_uri)
+    code = request.args.get("code")
     token = oauth.fetch_token(
         API.URL_ACCESS_TOKEN,
         code=code,
         client_id=client_id,
         client_secret=client_secret,
-        include_client_id=True)
+        include_client_id=True,
+    )
+    token["expires_at"] -= 100000000
 
-    with API(**token) as api:
+    with API(token, client_id=client_id, client_secret=client_secret,) as api:
         collections = Collection.get_roots(api)
 
     return render_template_string(COLLECTIONS, collections=collections)
 
 
-@app.route('/login')
+@app.route("/login")
 def login():
-    oauth = OAuth2Session(client_id, redirect_uri=redirect_uri)
+    oauth = create_oauth2session(client_id, redirect_uri=redirect_uri)
     authorization_url, _ = oauth.authorization_url(API.URL_AUTHORIZE)
     return redirect(authorization_url)
 
-@app.route('/')
+
+@app.route("/")
 def index():
     return render_template_string(INDEX)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Union
 
 import json
 import enum
@@ -7,6 +7,22 @@ import datetime
 
 import requests
 from requests_oauthlib import OAuth2Session  # type: ignore
+
+
+def update_expires(resp: Any) -> Any:
+    token = resp.json()
+    if "expires" in token:
+        token["expires_in"] = token.pop("expires") / 1000
+    resp._content = json.dumps(token).encode("UTF-8")
+    return resp
+
+
+def create_oauth2session(*args: Any, **kwargs: Any) -> OAuth2Session:
+    session = OAuth2Session(*args, **kwargs)
+
+    session.register_compliance_hook("access_token_response", update_expires)
+    session.register_compliance_hook("refresh_token_response", update_expires)
+    return session
 
 
 class API:
@@ -25,16 +41,12 @@ class API:
 
     def __init__(
         self,
-        access_token: str,
-        refresh_token: Optional[str] = None,
-        expires: Optional[float] = None,
+        token: Union[str, Dict[str, Any]],
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         token_type: str = "Bearer",
     ) -> None:
-        self.access_token = access_token
-        self.refresh_token = refresh_token
-        self.expires = expires
+        self.token = token
         self.client_id = client_id
         self.client_secret = client_secret
         self.token_type = token_type
@@ -62,14 +74,6 @@ class API:
             self.session = None
 
     def _create_session(self) -> OAuth2Session:
-        token: Dict[str, Any] = {"access_token": self.access_token}
-        if self.refresh_token:
-            token["refresh_token"] = self.refresh_token
-        if self.expires:
-            token["expires"] = self.expires
-        if self.token_type:
-            token["token_type"] = self.token_type
-
         extra: Optional[Dict[str, Any]]
         if self.client_id and self.client_secret:
             extra = {
@@ -79,10 +83,15 @@ class API:
         else:
             extra = None
 
-        def update_token(token: str) -> None:
-            self.access_token = token
+        def update_token(newtoken: str) -> None:
+            self.token = newtoken
 
-        return OAuth2Session(
+        if isinstance(self.token, str):
+            token = {"access_token": self.token}
+        else:
+            token = self.token
+
+        return create_oauth2session(
             self.client_id,
             token=token,
             auto_refresh_kwargs=extra,
@@ -128,6 +137,11 @@ class API:
 
         resp.raise_for_status()
 
+    def _request_headers(self) -> Dict[str, str]:
+        return {
+            "Content-Type": "application/json",
+        }
+
     def get(
         self, url: str, params: Optional[Dict[Any, Any]] = None
     ) -> requests.models.Response:
@@ -144,7 +158,7 @@ class API:
         """
 
         assert self.session
-        ret = self.session.get(url, params=params)
+        ret = self.session.get(url, headers=self._request_headers(), params=params)
         self._on_resp(ret)
 
         return ret
@@ -153,18 +167,22 @@ class API:
         json = self._to_json(json)
 
         assert self.session
-        ret = self.session.put(url, data=json)
+        ret = self.session.put(url, headers=self._request_headers(), data=json)
         self._on_resp(ret)
         return ret
 
     def post(self, url: str, json: Any = None) -> requests.models.Response:
+        json = self._to_json(json)
+
         assert self.session
-        ret = self.session.post(url, json=json)
+        ret = self.session.post(url, headers=self._request_headers(), data=json)
         self._on_resp(ret)
         return ret
 
     def delete(self, url: str, json: Any = None) -> requests.models.Response:
+        json = self._to_json(json)
+
         assert self.session
-        ret = self.session.delete(url, json=json)
+        ret = self.session.delete(url, headers=self._request_headers(), data=json)
         self._on_resp(ret)
         return ret

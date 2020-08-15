@@ -16,8 +16,11 @@ __all__ = (
     "UserFiles",
     "UserRef",
     "View",
+    "create_oauth2session",
+    "__version__",
 )
-from .api import API  # noqa
+
+from .api import API, create_oauth2session  # noqa
 from .models import (  # noqa
     Access,
     AccessLevel,
