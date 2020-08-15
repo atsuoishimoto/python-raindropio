@@ -6,6 +6,7 @@ import enum
 import datetime
 
 import requests
+from requests_oauthlib import OAuth2Session  # type: ignore
 
 
 class API:
@@ -14,10 +15,80 @@ class API:
     :param str token: An access token for authorization.
     """
 
-    _token: str
+    URL_AUTHORIZE = "https://raindrop.io/oauth/authorize"
+    URL_ACCESS_TOKEN = "https://raindrop.io/oauth/access_token"
+    URL_REFRESH = "https://raindrop.io/oauth/access_token"
 
-    def __init__(self, token: str) -> None:
-        self._token = token
+    ratelimit: Optional[int] = None
+    ratelimit_remaining: Optional[int] = None
+    ratelimit_reset: Optional[int] = None
+
+    def __init__(
+        self,
+        access_token: str,
+        refresh_token: Optional[str] = None,
+        expires: Optional[float] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        token_type: str = "Bearer",
+    ) -> None:
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.expires = expires
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.token_type = token_type
+
+        self.session = None
+
+        self.open()
+
+    def __enter__(self) -> API:
+        if not self.session:
+            self.open()
+
+        return self
+
+    def __exit__(self, type, value, traceback) -> None:  # type: ignore
+        self.close()
+
+    def open(self) -> None:
+        self.close()
+        self.session = self._create_session()
+
+    def close(self) -> None:
+        if self.session:
+            self.session.close()
+            self.session = None
+
+    def _create_session(self) -> OAuth2Session:
+        token: Dict[str, Any] = {"access_token": self.access_token}
+        if self.refresh_token:
+            token["refresh_token"] = self.refresh_token
+        if self.expires:
+            token["expires"] = self.expires
+        if self.token_type:
+            token["token_type"] = self.token_type
+
+        extra: Optional[Dict[str, Any]]
+        if self.client_id and self.client_secret:
+            extra = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+            }
+        else:
+            extra = None
+
+        def update_token(token: str) -> None:
+            self.access_token = token
+
+        return OAuth2Session(
+            self.client_id,
+            token=token,
+            auto_refresh_kwargs=extra,
+            auto_refresh_url=self.URL_REFRESH,
+            token_updater=update_token,
+        )
 
     def _json_unknown(self, obj: Any) -> Any:
         if isinstance(obj, enum.Enum):
@@ -36,11 +107,26 @@ class API:
         else:
             return None
 
-    def _request_headers(self) -> Dict[str, str]:
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self._token}",
-        }
+    def _on_resp(self, resp: Any) -> None:
+        def get_int(name: str) -> Optional[int]:
+            value = resp.headers.get(name, None)
+            if value is not None:
+                return int(value)
+            return None
+
+        v = get_int("X-RateLimit-Limit")
+        if v is not None:
+            self.ratelimit = v
+
+        v = get_int("X-RateLimit-Remaining")
+        if v is not None:
+            self.ratelimit_remaining = v
+
+        v = get_int("X-RateLimit-Reset")
+        if v is not None:
+            self.ratelimit_reset = v
+
+        resp.raise_for_status()
 
     def get(
         self, url: str, params: Optional[Dict[Any, Any]] = None
@@ -57,25 +143,28 @@ class API:
         :rtype: :class:`requests.Response`
         """
 
-        ret = requests.get(url, headers=self._request_headers(), params=params)
-        ret.raise_for_status()
+        assert self.session
+        ret = self.session.get(url, params=params)
+        self._on_resp(ret)
 
         return ret
 
     def put(self, url: str, json: Any = None) -> requests.models.Response:
         json = self._to_json(json)
-        ret = requests.put(url, headers=self._request_headers(), data=json)
-        ret.raise_for_status()
+
+        assert self.session
+        ret = self.session.put(url, data=json)
+        self._on_resp(ret)
         return ret
 
     def post(self, url: str, json: Any = None) -> requests.models.Response:
-        json = self._to_json(json)
-        ret = requests.post(url, headers=self._request_headers(), data=json)
-        ret.raise_for_status()
+        assert self.session
+        ret = self.session.post(url, json=json)
+        self._on_resp(ret)
         return ret
 
     def delete(self, url: str, json: Any = None) -> requests.models.Response:
-        json = self._to_json(json)
-        ret = requests.delete(url, headers=self._request_headers(), data=json)
-        ret.raise_for_status()
+        assert self.session
+        ret = self.session.delete(url, json=json)
+        self._on_resp(ret)
         return ret

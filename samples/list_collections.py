@@ -26,5 +26,6 @@ def print_collection(c):
 for c in Collection.get_roots(api):
     print_collection(c)
 
+print("---- children")
 for c in Collection.get_childrens(api):
     print_collection(c)

@@ -88,7 +88,7 @@ class Collection(DictModel):
     #: (:class:`Access`) Permissions for this collection
     access = DictAttr(Access)
 
-    collaborators = DictAttr[Optional[List]](default=None)
+    collaborators = DictAttr[Optional[List[Any]]](default=None)
     color = DictAttr[Optional[str]](default=None)
     count = DictAttr[int]()
     cover = DictAttr[List[str]]()
@@ -188,7 +188,7 @@ class Collection(DictModel):
         return Collection(item)
 
     @classmethod
-    def remove(cls, api: API, id: int):
+    def remove(cls, api: API, id: int) -> None:
         URL = f"https://api.raindrop.io/rest/v1/collection/{id}"
         api.delete(URL, json={})
 
@@ -348,7 +348,7 @@ class Raindrop(DictModel):
         return cls(item)
 
     @classmethod
-    def remove(cls, api: API, id: int):
+    def remove(cls, api: API, id: int) -> None:
         URL = f"https://api.raindrop.io/rest/v1/raindrop/{id}"
         api.delete(URL, json={})
 
@@ -362,7 +362,7 @@ class Raindrop(DictModel):
         word: Optional[str] = None,
         tag: Optional[str] = None,
         important: Optional[bool] = None,
-    ):
+    ) -> List[Raindrop]:
 
         args: List[Dict[str, Any]] = []
         if word is not None:
@@ -404,7 +404,7 @@ class Group(DictModel):
     title = DictAttr[str]()
     hidden = DictAttr[bool]()
     sort = DictAttr[int]()
-    collections = DictAttrList[int](name="collections")
+    collectionids = DictAttrList[int](name="collections")
 
 
 class UserFiles(DictModel):

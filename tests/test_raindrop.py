@@ -26,10 +26,10 @@ raindrop = {
 }
 
 
-def test_get():
+def test_get() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.get().json.return_value = {"item": raindrop}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": raindrop}
 
         c = Raindrop.get(api, 2000)
 
@@ -52,35 +52,37 @@ def test_get():
         assert c.user.id == 3000
 
 
-def test_search():
+def test_search() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.get().json.return_value = {"items": [raindrop]}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"items": [raindrop]}
 
         found = Raindrop.search(api)
         assert found[0].id == 2000
 
 
-def test_create():
+def test_create() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.post().json.return_value = {"item": raindrop}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": raindrop}
         item = Raindrop.create(api, link="https://example.com")
         assert item.id == 2000
 
 
-def test_update():
+def test_update() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.put().json.return_value = {"item": raindrop}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": raindrop}
         item = Raindrop.update(api, id=2000, link="https://example.com")
         assert item.id == 2000
 
 
-def test_remove():
+def test_remove() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
+    with patch("raindropio.api.OAuth2Session.request") as m:
         Raindrop.remove(api, id=2000)
-        assert m.delete.call_args[0] == (
+
+        assert m.call_args[0] == (
+            "DELETE",
             "https://api.raindrop.io/rest/v1/raindrop/2000",
         )

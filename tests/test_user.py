@@ -39,8 +39,8 @@ user = {
 
 def test_get() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.get().json.return_value = {"user": user}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"user": user}
         c = User.get(api)
 
         assert c.id == 1000
@@ -61,7 +61,7 @@ def test_get() -> None:
         assert c.groups[0].hidden is False
         assert c.groups[0].sort == 0
         assert c.groups[0].title == "My Collections"
-        assert list(c.groups[0].collections) == [2000, 3000]
+        assert list(c.groups[0].collectionids) == [2000, 3000]
         assert c.password is True
         assert c.pro is True
         assert c.registered == datetime.datetime(

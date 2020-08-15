@@ -22,9 +22,9 @@ collection = {
 }
 
 
-def test_get_roots():
+def test_get_roots() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
+    with patch("raindropio.api.OAuth2Session.request") as m:
         m.get().json.return_value = {"items": [collection]}
         for c in Collection.get_roots(api):
             assert c.id == 1000
@@ -41,6 +41,7 @@ def test_get_roots():
             assert c.lastUpdate == datetime.datetime(
                 2020, 1, 2, 0, 0, 0, tzinfo=datetime.timezone.utc
             )
+            assert c.parent
             assert c.parent.id == 100
             assert c.public is False
             assert c.sort == 3000
@@ -49,44 +50,44 @@ def test_get_roots():
             assert c.view == View.list
 
 
-def test_get_childrens():
+def test_get_childrens() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
+    with patch("raindropio.api.OAuth2Session.request") as m:
         m.get().json.return_value = {"items": [collection]}
         for c in Collection.get_childrens(api):
             assert c.id == 1000
 
 
-def test_get():
+def test_get() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.get().json.return_value = {"item": collection}
-
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": collection}
         c = Collection.get(api, 1000)
         assert c.id == 1000
 
 
-def test_update():
+def test_update() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.put().json.return_value = {"item": collection}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": collection}
         title = str(datetime.datetime.now())
         c = Collection.update(api, id=1000, title=title, view=View.list)
         assert c.id == 1000
 
 
-def test_create():
+def test_create() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
-        m.post().json.return_value = {"item": collection}
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        m.return_value.json.return_value = {"item": collection}
         c = Collection.create(api, title="abcdef")
         assert c.id == 1000
 
 
-def test_delete():
+def test_delete() -> None:
     api = API("dummy")
-    with patch("raindropio.api.requests") as m:
+    with patch("raindropio.api.OAuth2Session.request") as m:
         Collection.remove(api, id=1000)
-        assert m.delete.call_args[0] == (
+        assert m.call_args[0] == (
+            "DELETE",
             "https://api.raindrop.io/rest/v1/collection/1000",
         )

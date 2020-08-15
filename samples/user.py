@@ -22,7 +22,13 @@ print("font_size:", c.config.font_size)
 print("last_collection:", c.config.last_collection)
 print("raindrops_view:", c.config.raindrops_view)
 
-print("title:", c.groups[0].title)
-print("hidden:", c.groups[0].hidden)
-print("sort:", c.groups[0].sort)
-print("collections:", c.groups[0].collectionids)
+
+for group in c.groups:
+    print("group title:", group.title)
+    print("hidden:", group.hidden)
+    print("sort:", group.sort)
+
+    print("collection:")
+    for collectionid in group.collectionids:
+        collection = Collection.get(api, collectionid)
+        print(collection.title)
