@@ -1,0 +1,24 @@
+from unittest.mock import patch
+import time
+import json
+
+from requests import Response
+from raindropio import *
+
+def test_refresh() -> None:
+    api = API({"access_token":"old", "refresh_token":"bbb", "expires_at": time.time()-100000})
+    with patch("requests.Session.request") as m:
+        resp = Response()
+        resp.status_code = 200
+        updated = {'access_token': 'updated', "expires_at": time.time()+100000}
+        resp._content = json.dumps(updated).encode()
+
+        m.return_value = resp
+        api.get("https://localhost", {})
+
+        refresh, local = m.call_args_list
+        assert refresh[0] == ('POST', 'https://raindrop.io/oauth/access_token')
+        assert local[0] == ('GET', 'https://localhost')
+
+        assert api.token['access_token'] == 'updated'
+
