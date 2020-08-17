@@ -15,11 +15,10 @@ You can install latest version from PyPI::
 You can also get source code from `Github <https://github.com/atsuoishimoto/python-raindropio>`_.
 
 
-Getting token
+Getting test token
 ----------------------
 
-
-You need to get a token to use Raindrop.io APIs. 
+Get a token to use Raindrop.io APIs for testing.
 
 1. Register your application at `Developers page <https://app.raindrop.io/#/settings/apps/dev>`_.
 
@@ -41,5 +40,3 @@ This sample retrieves all bookmarks from *Unsorted* collection.
        for item in items:
           print(item.title)
        page += 1
-
-

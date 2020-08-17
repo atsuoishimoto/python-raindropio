@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Any, Dict, Union
 
-import json
-import enum
 import datetime
+import enum
+import json
+from typing import Any, Dict, Optional, Union
 
 import requests
-from requests_oauthlib import OAuth2Session  # type: ignore
+from requests_oauthlib import OAuth2Session
 
 
 def update_expires(resp: Any) -> Any:
@@ -28,7 +28,8 @@ def create_oauth2session(*args: Any, **kwargs: Any) -> OAuth2Session:
 class API:
     """Provides communication to the Raindrop.io API server.
 
-    :param str token: An access token for authorization.
+    :param token: An access token for authorization.
+    :type token: string or dict.
     """
 
     URL_AUTHORIZE = "https://raindrop.io/oauth/authorize"
