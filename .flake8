@@ -1,10 +1,10 @@
 [flake8]
 max-line-length = 120
-ignore = 
+ignore =
     E203, # whitespace before ':'
     E261, # at least two spaces before inline comment
     E731, # do not assign a lambda expression, use a def
-    E401, # multiple imports on one line 
+    E401, # multiple imports on one line
     E231, # missing whitespace after ','
 
     F403, # unable to detect undefined names

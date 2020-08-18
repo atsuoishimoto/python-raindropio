@@ -21,20 +21,7 @@ __all__ = (
 )
 
 from .api import API, create_oauth2session  # noqa
-from .models import (  # noqa
-    Access,
-    AccessLevel,
-    BrokenLevel,
-    Collection,
-    CollectionRef,
-    DictModel,
-    FontColor,
-    Group,
-    Raindrop,
-    RaindropType,
-    User,
-    UserConfig,
-    UserFiles,
-    UserRef,
-    View,
-)
+from .models import Collection  # noqa
+from .models import (Access, AccessLevel, BrokenLevel, CollectionRef, DictModel,
+                     FontColor, Group, Raindrop, RaindropType, User, UserConfig,
+                     UserFiles, UserRef, View)

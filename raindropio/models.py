@@ -1,20 +1,12 @@
 from __future__ import annotations
-from typing import (
-    Optional,
-    Any,
-    List,
-    Dict,
-    Sequence,
-    ClassVar,
-    Union,
-)
 
-import json
-import enum
 import datetime
+import enum
+import json
+from typing import Any, ClassVar, Dict, List, Optional, Sequence, Union
 
 from dateutil.parser import parse as dateparse
-from jashin.dictattr import DictModel, DictAttr, DictAttrList
+from jashin.dictattr import ItemAttr, SequenceAttr, DictModel
 
 from .api import API
 
@@ -55,7 +47,7 @@ class CollectionRef(DictModel):
     Unsorted: ClassVar[CollectionRef]
     Trash: ClassVar[CollectionRef]
 
-    id = DictAttr[int](name="$id")
+    id = ItemAttr[int](name="$id")
 
 
 CollectionRef.Unsorted = CollectionRef({"$id": -1})
@@ -66,41 +58,41 @@ class UserRef(DictModel):
     """Represents reference to :class:`User` object. """
 
     #: (:class:`int`) The id of the :class:`User`.
-    id = DictAttr[int](name="$id")
+    id = ItemAttr[int](name="$id")
 
 
 class Access(DictModel):
     """Represents Access control of Collections"""
 
     #: (:class:`UserRef`) The user for this permission.
-    level = DictAttr(AccessLevel)
+    level = ItemAttr(AccessLevel)
 
     #: (:class:`bool`) True if possible to change parent.
-    draggable = DictAttr[bool]()
+    draggable = ItemAttr[bool]()
 
 
 class Collection(DictModel):
     """Represents Collection"""
 
     #: (:class:`int`) The id of the collection.
-    id = DictAttr[int](name="_id")
+    id = ItemAttr[int](name="_id")
 
     #: (:class:`Access`) Permissions for this collection
-    access = DictAttr(Access)
+    access = ItemAttr(Access)
 
-    collaborators = DictAttr[Optional[List[Any]]](default=None)
-    color = DictAttr[Optional[str]](default=None)
-    count = DictAttr[int]()
-    cover = DictAttr[List[str]]()
-    created = DictAttr(dateparse)
-    expanded = DictAttr[bool]()
-    lastUpdate = DictAttr(dateparse)
-    parent = DictAttr[Optional[CollectionRef]](CollectionRef, default=None)
-    public = DictAttr[bool]()
-    sort = DictAttr[int]()
-    title = DictAttr[str]()
-    user = DictAttr(UserRef)
-    view = DictAttr(View)
+    collaborators = ItemAttr[Optional[List[Any]]](default=None)
+    color = ItemAttr[Optional[str]](default=None)
+    count = ItemAttr[int]()
+    cover = ItemAttr[List[str]]()
+    created = ItemAttr(dateparse)
+    expanded = ItemAttr[bool]()
+    lastUpdate = ItemAttr(dateparse)
+    parent = ItemAttr[Optional[CollectionRef]](CollectionRef, default=None)
+    public = ItemAttr[bool]()
+    sort = ItemAttr[int]()
+    title = ItemAttr[str]()
+    user = ItemAttr(UserRef)
+    view = ItemAttr(View)
 
     @classmethod
     def get_roots(cls, api: API) -> Sequence[Collection]:
@@ -205,19 +197,19 @@ class RaindropType(enum.Enum):
 class Raindrop(DictModel):
     """Raindrop"""
 
-    id = DictAttr[int](name="_id")
-    collection = DictAttr(CollectionRef)
-    cover = DictAttr[str]()
-    created = DictAttr(dateparse)
-    domain = DictAttr[str]()
-    excerpt = DictAttr[str]()
-    lastUpdate = DictAttr(dateparse)
-    link = DictAttr[str]()
-    media = DictAttr[Sequence[Dict[str, Any]]]()
-    tags = DictAttr[Sequence[str]]()
-    title = DictAttr[str]()
-    type = DictAttr(RaindropType)
-    user = DictAttr(UserRef)
+    id = ItemAttr[int](name="_id")
+    collection = ItemAttr(CollectionRef)
+    cover = ItemAttr[str]()
+    created = ItemAttr(dateparse)
+    domain = ItemAttr[str]()
+    excerpt = ItemAttr[str]()
+    lastUpdate = ItemAttr(dateparse)
+    link = ItemAttr[str]()
+    media = ItemAttr[Sequence[Dict[str, Any]]]()
+    tags = ItemAttr[Sequence[str]]()
+    title = ItemAttr[str]()
+    type = ItemAttr(RaindropType)
+    user = ItemAttr(UserRef)
 
     #    broken: bool
     #    cache: Cache
@@ -393,39 +385,39 @@ class FontColor(enum.Enum):
 
 
 class UserConfig(DictModel):
-    broken_level = DictAttr(BrokenLevel)
-    font_color = DictAttr[Optional[FontColor]](FontColor, default=None)
-    font_size = DictAttr[int]()
-    last_collection = DictAttr[int]()
-    raindrops_view = DictAttr(View)
+    broken_level = ItemAttr(BrokenLevel)
+    font_color = ItemAttr[Optional[FontColor]](FontColor, default=None)
+    font_size = ItemAttr[int]()
+    last_collection = ItemAttr[int]()
+    raindrops_view = ItemAttr(View)
 
 
 class Group(DictModel):
-    title = DictAttr[str]()
-    hidden = DictAttr[bool]()
-    sort = DictAttr[int]()
-    collectionids = DictAttrList[int](name="collections")
+    title = ItemAttr[str]()
+    hidden = ItemAttr[bool]()
+    sort = ItemAttr[int]()
+    collectionids = SequenceAttr[int](name="collections")
 
 
 class UserFiles(DictModel):
-    used = DictAttr[int]()
-    size = DictAttr[int]()
-    lastCheckPoint = DictAttr(dateparse)
+    used = ItemAttr[int]()
+    size = ItemAttr[int]()
+    lastCheckPoint = ItemAttr(dateparse)
 
 
 class User(DictModel):
     """User"""
 
-    id = DictAttr[int](name="_id")
-    config = DictAttr(UserConfig)
-    email = DictAttr[str]()
-    email_MD5 = DictAttr[str]()
-    files = DictAttr(UserFiles)
-    fullName = DictAttr[str]()
-    groups = DictAttrList(Group)
-    password = DictAttr[bool]()
-    pro = DictAttr[bool]()
-    registered = DictAttr(dateparse)
+    id = ItemAttr[int](name="_id")
+    config = ItemAttr(UserConfig)
+    email = ItemAttr[str]()
+    email_MD5 = ItemAttr[str]()
+    files = ItemAttr(UserFiles)
+    fullName = ItemAttr[str]()
+    groups = SequenceAttr(Group)
+    password = ItemAttr[bool]()
+    pro = ItemAttr[bool]()
+    registered = ItemAttr(dateparse)
 
     @classmethod
     def get(cls, api: API) -> User:

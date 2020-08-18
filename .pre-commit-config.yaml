@@ -24,3 +24,7 @@ repos:
   rev: v0.782
   hooks:
     - id: mypy
+      additional_dependencies:
+        - requests-oauthlib
+        - python-dateutil
+        - jashin

@@ -12,3 +12,6 @@ target-version = ['py37', 'py38']
 #addopts = -s
 #log_cli = 1
 log_cli_level = 'DEBUG'
+
+[tool.isort]
+line_length = 88

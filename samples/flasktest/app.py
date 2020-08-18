@@ -1,9 +1,8 @@
 import os
-from flask import Flask, redirect, request
-from flask import render_template_string
+
+from flask import Flask, redirect, render_template_string, request
 
 from raindropio import *
-
 
 client_id = os.environ["RAINDROP_CLIENT_ID"]
 client_secret = os.environ["RAINDROP_CLIENT_SECRET"]

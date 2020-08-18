@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 from raindropio import *
 
-
 user = {
     "_id": 1000,
     "config": {

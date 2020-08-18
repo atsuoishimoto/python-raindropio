@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 from raindropio import *
 
-
 raindrop = {
     "_id": 2000,
     "collection": {"$db": "", "$id": -1, "$ref": "collections"},
