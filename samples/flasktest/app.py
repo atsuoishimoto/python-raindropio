@@ -40,7 +40,6 @@ def approved():
         client_secret=client_secret,
         include_client_id=True,
     )
-    token["expires_at"] -= 100000000
 
     with API(token, client_id=client_id, client_secret=client_secret,) as api:
         collections = Collection.get_roots(api)

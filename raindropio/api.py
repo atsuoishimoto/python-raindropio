@@ -9,19 +9,11 @@ import requests
 from requests_oauthlib import OAuth2Session
 
 
-def update_expires(resp: Any) -> Any:
-    token = resp.json()
-    if "expires" in token:
-        token["expires_in"] = token.pop("expires") / 1000
-    resp._content = json.dumps(token).encode("UTF-8")
-    return resp
-
-
 def create_oauth2session(*args: Any, **kwargs: Any) -> OAuth2Session:
     session = OAuth2Session(*args, **kwargs)
 
-    session.register_compliance_hook("access_token_response", update_expires)
-    session.register_compliance_hook("refresh_token_response", update_expires)
+#    session.register_compliance_hook("access_token_response", update_expires)
+#    session.register_compliance_hook("refresh_token_response", update_expires)
     return session
 
 
@@ -92,7 +84,7 @@ class API:
         else:
             token = self.token
 
-        return create_oauth2session(
+        return OAuth2Session(
             self.client_id,
             token=token,
             auto_refresh_kwargs=extra,

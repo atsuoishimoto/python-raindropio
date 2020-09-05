@@ -1,4 +1,4 @@
-name: Release jashin
+name: Release raindropio
 
 on:
   release:
