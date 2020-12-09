@@ -21,7 +21,10 @@ user = {
     "fullName": "test user",
     "groups": [
         {
-            "collections": [2000, 3000,],
+            "collections": [
+                2000,
+                3000,
+            ],
             "hidden": False,
             "sort": 0,
             "title": "My Collections",

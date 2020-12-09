@@ -41,7 +41,11 @@ def approved():
         include_client_id=True,
     )
 
-    with API(token, client_id=client_id, client_secret=client_secret,) as api:
+    with API(
+        token,
+        client_id=client_id,
+        client_secret=client_secret,
+    ) as api:
         collections = Collection.get_roots(api)
 
     return render_template_string(COLLECTIONS, collections=collections)

@@ -6,7 +6,7 @@ import json
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Union
 
 from dateutil.parser import parse as dateparse
-from jashin.dictattr import ItemAttr, SequenceAttr, DictModel
+from jashin.dictattr import DictModel, ItemAttr, SequenceAttr
 
 from .api import API
 
@@ -265,9 +265,9 @@ class Raindrop(DictModel):
             args["cover"] = cover
         if collection is not None:
             if isinstance(collection, (Collection, CollectionRef)):
-                args["collection"] = {'$id': collection.id}
+                args["collection"] = {"$id": collection.id}
             else:
-                args["collection"] = {'$id': collection}
+                args["collection"] = {"$id": collection}
         if type is not None:
             args["type"] = type
         if html is not None:
