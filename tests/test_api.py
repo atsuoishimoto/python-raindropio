@@ -19,7 +19,7 @@ def test_refresh() -> None:
         resp = Response()
         resp.status_code = 200
         updated = {"access_token": "updated", "expires_at": time.time() + 100000}
-        resp._content = json.dumps(updated).encode()  # type: ignore
+        resp._content = json.dumps(updated).encode()
 
         m.return_value = resp
         api.get("https://localhost", {})

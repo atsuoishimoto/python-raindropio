@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, redirect, render_template_string, request
+from werkzeug import Response
 
 from raindropio import *
 
@@ -30,7 +31,7 @@ COLLECTIONS = """
 
 
 @app.route("/approved")
-def approved():
+def approved() -> str:
     oauth = create_oauth2session(client_id, redirect_uri=redirect_uri)
     code = request.args.get("code")
     token = oauth.fetch_token(
@@ -52,14 +53,14 @@ def approved():
 
 
 @app.route("/login")
-def login():
+def login() -> Response:
     oauth = create_oauth2session(client_id, redirect_uri=redirect_uri)
     authorization_url, _ = oauth.authorization_url(API.URL_AUTHORIZE)
     return redirect(authorization_url)
 
 
 @app.route("/")
-def index():
+def index() -> str:
     return render_template_string(INDEX)
 
 
