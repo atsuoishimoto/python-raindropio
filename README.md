@@ -17,7 +17,7 @@ pip3 install python-raindropio
 
 ## Usage
 
-You must register your application at https://app.raindrop.io/#/settings/apps/dev.
+You must register your application at https://app.raindrop.io/settings/integrations.
 In the application page, create test token to run following samples.
 
 * Create collection
