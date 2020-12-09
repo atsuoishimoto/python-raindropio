@@ -265,9 +265,9 @@ class Raindrop(DictModel):
             args["cover"] = cover
         if collection is not None:
             if isinstance(collection, (Collection, CollectionRef)):
-                args["collection"] = collection.id
+                args["collection"] = {'$id': collection.id}
             else:
-                args["collection"] = collection
+                args["collection"] = {'$id': collection}
         if type is not None:
             args["type"] = type
         if html is not None:
