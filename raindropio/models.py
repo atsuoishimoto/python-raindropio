@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import enum
 import json
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Union
 
 from dateutil.parser import parse as dateparse
@@ -21,6 +22,7 @@ __all__ = [
     "Group",
     "Raindrop",
     "RaindropType",
+    "Tag",
     "User",
     "UserConfig",
     "UserFiles",
@@ -371,6 +373,24 @@ class Raindrop(DictModel):
         results = api.get(URL, params=params).json()
         return [cls(item) for item in results["items"]]
 
+    @classmethod
+    def upload(
+        cls,
+        api: API,
+        path: Path,
+        content_type: str,
+        collection: CollectionRef = CollectionRef.Unsorted,
+    ) -> Raindrop:
+        URL = f"https://api.raindrop.io/rest/v1/raindrop/file"
+
+        # Per update to API documentation by Rustem Mussabekov on 2022-11-29, these are the
+        # relevant arguments to create a new Raindrop with a file as it's body instead of a link:
+        data = {"collectionId" : str(collection.id)}
+        files = {"file": (path.name, open(path, "rb"), content_type)}
+
+        results = api.put_file(URL, path, data, files).json()
+        return cls(results["item"])
+
 
 class BrokenLevel(enum.Enum):
     basic = "basic"
@@ -424,3 +444,18 @@ class User(DictModel):
         URL = "https://api.raindrop.io/rest/v1/user"
         user = api.get(URL).json()["user"]
         return cls(user)
+
+
+class Tag(DictModel):
+    """Represents existing Tags, either all or just a specific collection."""
+
+    tag = ItemAttr[str]()
+    count = ItemAttr[int]()
+
+    @classmethod
+    def get(cls, api: API, collection_id: int = None) -> User:
+        URL = "https://api.raindrop.io/rest/v1/tags"
+        if collection_id:
+            URL += "/" + str(collection_id)
+        items = api.get(URL).json()["items"]
+        return [cls(item) for item in items]

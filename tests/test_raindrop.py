@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 from raindropio import *
@@ -85,3 +86,20 @@ def test_remove() -> None:
             "DELETE",
             "https://api.raindrop.io/rest/v1/raindrop/2000",
         )
+
+
+def test_upload() -> None:
+    api = API("dummy")
+    with patch("raindropio.api.OAuth2Session.request") as m:
+        upload = Raindrop.upload(api, Path(__file__), content_type="text/plain")
+
+        assert m.call_args[0] == (
+            "PUT",
+            "https://api.raindrop.io/rest/v1/raindrop/file",
+        )
+        assert "data" in m.call_args[1]
+        assert m.call_args[1]["data"] == {"collectionId": "-1"}  # ie. Unsorted collection
+
+        assert "files" in m.call_args[1]
+        assert "file" in m.call_args[1]["files"]
+        assert type(m.call_args[1]["files"]["file"]) == tuple

@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import enum
 import json
+from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 import requests
@@ -161,6 +162,31 @@ class API:
 
         assert self.session
         ret = self.session.put(url, headers=self._request_headers(), data=json)
+        self._on_resp(ret)
+        return ret
+
+    def put_file(self, url: str, path: Path, data: dict, files: dict) -> requests.models.Response:
+        """Upload a file by a PUT request
+
+        :param url: The url to send request to
+        :type url: str
+
+        :param path: Path to file to be uploaded
+        :type path: Path
+
+        :param data: Dictionary, payload to be sent for the :class:`Request`,
+            e.g. {"collectionId" : aCollection.id}
+        :type data: dict
+
+        :param files: Dictionary, request library "files" object to be sent for the :class:`Request`,
+            e.g. {'file': (aFileName, aFileLikeObj, aContentType)}
+        :type files: dict
+
+        :return: :class:`requests.Response` object
+        :rtype: :class:`requests.Response`
+        """
+        assert self.session
+        ret = self.session.put(url, data=data, files=files)
         self._on_resp(ret)
         return ret
 
